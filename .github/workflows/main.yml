@@ -1,3 +1,10 @@
+name: sentiment_avatar
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron:  '5 * * * *'
 steps:
   - name: checkout repo content
     uses: actions/checkout@v2 
