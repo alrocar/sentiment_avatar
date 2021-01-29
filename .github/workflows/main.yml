@@ -25,9 +25,9 @@ jobs:
       run: |
         python avatar.py
       env:
-        consumer_key: ${{ secrets.consumer_key }}
-        consumer_secret: ${{ secrets.consumer_secret }}
-        access_token: ${{ secrets.access_token }}
-        access_token_secret: ${{ secrets.access_token_secret }}
-        tb_token: ${{ secrets.tb_token }}
-        read_token: ${{ secrets.read_token }}
+        CONSUMER_KEY: ${{ secrets.CONSUMER_KEY }}
+        CONSUMER_SECRET: ${{ secrets.CONSUMER_SECRET }}
+        ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+        TB_TOKEN: ${{ secrets.TB_TOKEN }}
+        READ_TOKEN: ${{ secrets.READ_TOKEN }}
