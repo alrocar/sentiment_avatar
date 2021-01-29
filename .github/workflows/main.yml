@@ -5,24 +5,27 @@ on:
       - master
   schedule:
     - cron:  '5 * * * *'
-steps:
-  - name: checkout repo content
-    uses: actions/checkout@v2 
-  - name: setup python
-    uses: actions/setup-python@v2
-    with:
-      python-version: 3.7
-  - name: Install Python dependencies
-    uses: py-actions/py-dependency-install@v2
-    with:
-      path: "requirements.txt"
-  - name: execute py script # run the run.py to get the latest data
-    run: |
-      python avatar.py
-    env:
-      consumer_key: ${{ secrets.consumer_key }}
-      consumer_secret: ${{ secrets.consumer_secret }}
-      access_token: ${{ secrets.access_token }}
-      access_token_secret: ${{ secrets.access_token_secret }}
-      tb_token: ${{ secrets.tb_token }}
-      read_token: ${{ secrets.read_token }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout repo content
+      uses: actions/checkout@v2 
+    - name: setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install Python dependencies
+      uses: py-actions/py-dependency-install@v2
+      with:
+        path: "requirements.txt"
+    - name: execute py script # run the run.py to get the latest data
+      run: |
+        python avatar.py
+      env:
+        consumer_key: ${{ secrets.consumer_key }}
+        consumer_secret: ${{ secrets.consumer_secret }}
+        access_token: ${{ secrets.access_token }}
+        access_token_secret: ${{ secrets.access_token_secret }}
+        tb_token: ${{ secrets.tb_token }}
+        read_token: ${{ secrets.read_token }}
