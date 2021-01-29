@@ -13,12 +13,12 @@ from urllib3.util.retry import Retry
 
 targettwitterprofile = 'alrocar'
 
-consumer_key = os.environ['consumer_key']
-consumer_secret = os.environ['consumer_secret']
-access_token = os.environ['access_token']
-access_token_secret = os.environ['access_token_secret']
-tb_token = os.environ['tb_token']
-read_token = os.environ['read_token']
+consumer_key = os.environ['CONSUMER_KEY']
+consumer_secret = os.environ['CONSUMER_SECRET']
+access_token = os.environ['ACCESS_TOKEN']
+access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
+tb_token = os.environ['TB_TOKEN']
+read_token = os.environ['READ_TOKEN']
 
 auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
 auth.set_access_token(access_token, access_token_secret)
