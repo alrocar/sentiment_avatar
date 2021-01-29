@@ -27,9 +27,11 @@ api = tweepy.API(auth)
 
 mode = 'append'
 datasource = f'{targettwitterprofile}_tweets'
+datasource_raw = f'{targettwitterprofile}_tweets_raw'
 token = tb_token
 
 url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
+url_raw = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource_raw}'
 
 retry = Retry(total=5, backoff_factor=10)
 adapter = HTTPAdapter(max_retries=retry)
@@ -40,7 +42,11 @@ _session.mount('https://', adapter)
 csv_chunk = StringIO()
 writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
+csv_chunk_raw = StringIO()
+writer_raw = csv.writer(csv_chunk_raw, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+
 writer.writerow(["id", "date", "text", "polarity"])
+writer_raw.writerow(["tweet"])
 
 max_id_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_max_id.json?token={read_token}'
 # import ipdb; ipdb.set_trace(context=30)
@@ -56,8 +62,10 @@ for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages
         polarity = round(TextBlob(tweettext).sentiment.polarity,4)
 
         writer.writerow([tweetid, tweetdate, tweettext, polarity])
+        writer_raw.writerow([json.dumps(tweet)])
 
     data = csv_chunk.getvalue()
+    data_raw = csv_chunk_raw.getvalue()
     headers = {
         'Authorization': f'Bearer {token}',
         'X-TB-Client': 'alrocar-tweets-0.1',
@@ -65,6 +73,12 @@ for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages
 
     if data:
         response = _session.post(url, headers=headers, files=dict(csv=data))
+        ok = response.status_code < 400
+        if not ok:
+            raise Exception(json.dumps(response.json()))
+
+    if data_raw:
+        response = _session.post(url_raw, headers=headers, files=dict(csv=data_raw))
         ok = response.status_code < 400
         if not ok:
             raise Exception(json.dumps(response.json()))
