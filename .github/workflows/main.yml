@@ -5,9 +5,10 @@ on:
       - main
   schedule:
     - cron: "*/5 * * * *"
-environment: tw
+
 jobs:
   build:
+    environment: tw
     runs-on: ubuntu-latest
     steps:
     - name: checkout repo content
