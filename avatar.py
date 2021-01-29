@@ -43,7 +43,7 @@ writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_N
 writer.writerow(["id", "date", "text", "polarity"])
 
 max_id_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_max_id.json?token={read_token}'
-import ipdb; ipdb.set_trace(context=30)
+# import ipdb; ipdb.set_trace(context=30)
 response = _session.get(max_id_url)
 since_id = response.json()['data'][0]['since_id']
 
@@ -70,7 +70,7 @@ for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages
             raise Exception(json.dumps(response.json()))
     time.sleep(65)
 
-import ipdb; ipdb.set_trace(context=30)
+# import ipdb; ipdb.set_trace(context=30)
 polarity_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_moving_average.json?token={read_token}'
 response = _session.get(polarity_url)
 polarity = float(response.json()['data'][0]['polarity'])
