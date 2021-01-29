@@ -11,69 +11,69 @@ from io import StringIO
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# targettwitterprofile = 'alrocar'
+targettwitterprofile = 'alrocar'
 
-# consumer_key = os.environ['CONSUMER_KEY']
-# consumer_secret = os.environ['CONSUMER_SECRET']
-# access_token = os.environ['ACCESS_TOKEN']
-# access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
-# tb_token = os.environ['TB_TOKEN']
-# read_token = os.environ['READ_TOKEN']
+consumer_key = os.environ['CONSUMER_KEY']
+consumer_secret = os.environ['CONSUMER_SECRET']
+access_token = os.environ['ACCESS_TOKEN']
+access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
+tb_token = os.environ['TB_TOKEN']
+read_token = os.environ['READ_TOKEN']
 
-# auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-# auth.set_access_token(access_token, access_token_secret)
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+auth.set_access_token(access_token, access_token_secret)
 
-# api = tweepy.API(auth)
+api = tweepy.API(auth)
 
-# mode = 'append'
-# datasource = f'{targettwitterprofile}_tweets'
-# token = tb_token
+mode = 'append'
+datasource = f'{targettwitterprofile}_tweets'
+token = tb_token
 
-# url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
+url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
 
-# retry = Retry(total=5, backoff_factor=10)
-# adapter = HTTPAdapter(max_retries=retry)
-# _session = requests.Session()
-# _session.mount('http://', adapter)
-# _session.mount('https://', adapter)
+retry = Retry(total=5, backoff_factor=10)
+adapter = HTTPAdapter(max_retries=retry)
+_session = requests.Session()
+_session.mount('http://', adapter)
+_session.mount('https://', adapter)
 
-# csv_chunk = StringIO()
-# writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+csv_chunk = StringIO()
+writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
-# writer.writerow(["id", "date", "text", "polarity"])
+writer.writerow(["id", "date", "text", "polarity"])
 
-# max_id_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_max_id.json?token={read_token}'
-# # import ipdb; ipdb.set_trace(context=30)
-# response = _session.get(max_id_url)
-# since_id = response.json()['data'][0]['since_id']
+max_id_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_max_id.json?token={read_token}'
+# import ipdb; ipdb.set_trace(context=30)
+response = _session.get(max_id_url)
+since_id = response.json()['data'][0]['since_id']
 
-# # for page in tweepy.Cursor(api.user_timeline, id=targettwitterprofile, count=200).pages(20):
-# for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages(20):
-#     for tweet in page:
-#         tweetid = tweet.id
-#         tweetdate = str(tweet.created_at)
-#         tweettext = tweet.text
-#         polarity = round(TextBlob(tweettext).sentiment.polarity,4)
+# for page in tweepy.Cursor(api.user_timeline, id=targettwitterprofile, count=200).pages(20):
+for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages(20):
+    for tweet in page:
+        tweetid = tweet.id
+        tweetdate = str(tweet.created_at)
+        tweettext = tweet.text
+        polarity = round(TextBlob(tweettext).sentiment.polarity,4)
 
-#         writer.writerow([tweetid, tweetdate, tweettext, polarity])
+        writer.writerow([tweetid, tweetdate, tweettext, polarity])
 
-#     data = csv_chunk.getvalue()
-#     headers = {
-#         'Authorization': f'Bearer {token}',
-#         'X-TB-Client': 'alrocar-tweets-0.1',
-#     }
+    data = csv_chunk.getvalue()
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'X-TB-Client': 'alrocar-tweets-0.1',
+    }
 
-#     if data:
-#         response = _session.post(url, headers=headers, files=dict(csv=data))
-#         ok = response.status_code < 400
-#         if not ok:
-#             raise Exception(json.dumps(response.json()))
-#     time.sleep(65)
+    if data:
+        response = _session.post(url, headers=headers, files=dict(csv=data))
+        ok = response.status_code < 400
+        if not ok:
+            raise Exception(json.dumps(response.json()))
+    time.sleep(65)
 
-# # import ipdb; ipdb.set_trace(context=30)
-# polarity_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_moving_average.json?token={read_token}'
-# response = _session.get(polarity_url)
-# polarity = float(response.json()['data'][0]['polarity'])
+# import ipdb; ipdb.set_trace(context=30)
+polarity_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_moving_average.json?token={read_token}'
+response = _session.get(polarity_url)
+polarity = float(response.json()['data'][0]['polarity'])
 
 from PIL import Image
 import numpy as np
@@ -135,31 +135,31 @@ arr = np.array(img)
 
 day_of_year = datetime.now().timetuple().tm_yday
 
-for i in range(-100, 100, 10):
+# for i in range(-100, 100, 10):
     # hue = (180-i)
-    hue = (i + 100) * 1.8/720
+hue = (polarity + 100) * 1.8/720
 
-    new_img = Image.fromarray(shift_hue(arr,hue), 'RGBA')
-    avatar = f'_avatar{str(hue)}.png'
-    new_img.save(avatar)
+new_img = Image.fromarray(shift_hue(arr,hue), 'RGBA')
+avatar = f'_avatar{str(hue)}.png'
+new_img.save(avatar)
 
-# csv_chunk = StringIO()
-# writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+csv_chunk = StringIO()
+writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
-# writer.writerow(["date", "polarity", "hue"])
-# writer.writerow([str(datetime.now()), polarity, hue])
-# data = csv_chunk.getvalue()
-# headers = {
-#     'Authorization': f'Bearer {token}',
-#     'X-TB-Client': 'alrocar-tweets-0.1',
-# }
+writer.writerow(["date", "polarity", "hue"])
+writer.writerow([str(datetime.now()), polarity, hue])
+data = csv_chunk.getvalue()
+headers = {
+    'Authorization': f'Bearer {token}',
+    'X-TB-Client': 'alrocar-tweets-0.1',
+}
 
-# if data:   
-#     # updating the profile picture 
-#     api.update_profile_image(avatar)
-#     datasource = f'{targettwitterprofile}_polarity_log'
-#     url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
-#     response = _session.post(url, headers=headers, files=dict(csv=data))
-#     ok = response.status_code < 400
-#     if not ok:
-#         raise Exception(json.dumps(response.json()))
+if data:   
+    # updating the profile picture 
+    api.update_profile_image(avatar)
+    datasource = f'{targettwitterprofile}_polarity_log'
+    url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
+    response = _session.post(url, headers=headers, files=dict(csv=data))
+    ok = response.status_code < 400
+    if not ok:
+        raise Exception(json.dumps(response.json()))
