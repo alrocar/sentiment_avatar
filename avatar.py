@@ -1,5 +1,6 @@
 import tweepy
 import os
+import re
 from textblob import TextBlob
 import time
 from datetime import datetime
@@ -10,6 +11,24 @@ import json
 from io import StringIO
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+import nltk
+from nltk.sentiment import SentimentIntensityAnalyzer
+sia = SentimentIntensityAnalyzer()
+
+nltk.download([
+    "names",
+    "stopwords",
+    "state_union",
+    "twitter_samples",
+    "movie_reviews",
+    "averaged_perceptron_tagger",
+    "vader_lexicon",
+    "punkt",
+])
+
+# import ipdb; ipdb.set_trace(context=30)
+stopwords = nltk.corpus.stopwords.words("english") + nltk.corpus.stopwords.words("spanish")
 
 targettwitterprofile = 'alrocar'
 
@@ -59,10 +78,12 @@ for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages
         tweetid = tweet.id
         tweetdate = str(tweet.created_at)
         tweettext = tweet.text
-        polarity = round(TextBlob(tweettext).sentiment.polarity,4)
+        tt = " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweettext).split())
+        polarity = sia.polarity_scores(tt)['compound']
+        # polarity = round(TextBlob(tt).sentiment.polarity,4)
 
         writer.writerow([tweetid, tweetdate, tweettext, polarity])
-        writer_raw.writerow([json.dumps(tweet)])
+        writer_raw.writerow([json.dumps(tweet._json)])
 
     data = csv_chunk.getvalue()
     data_raw = csv_chunk_raw.getvalue()
