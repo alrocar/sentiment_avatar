@@ -6,9 +6,9 @@ steps:
     with:
       python-version: 3.7
   - name: Install Python dependencies
-  uses: py-actions/py-dependency-install@v2
-  with:
-    path: "requirements.txt"
+    uses: py-actions/py-dependency-install@v2
+    with:
+      path: "requirements.txt"
   - name: execute py script # run the run.py to get the latest data
     run: |
       python avatar.py
