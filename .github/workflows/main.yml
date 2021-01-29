@@ -1,8 +1,8 @@
 name: sentiment_avatar
 on:
-  push:
+  push: 
     branches:
-      - master
+      - main
   schedule:
     - cron:  '5 * * * *'
 jobs:
