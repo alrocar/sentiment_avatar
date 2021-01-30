@@ -16,19 +16,19 @@ import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 sia = SentimentIntensityAnalyzer()
 
-nltk.download([
-    "names",
-    "stopwords",
-    "state_union",
-    "twitter_samples",
-    "movie_reviews",
-    "averaged_perceptron_tagger",
-    "vader_lexicon",
-    "punkt",
-])
+# nltk.download([
+#     "names",
+#     "stopwords",
+#     "state_union",
+#     "twitter_samples",
+#     "movie_reviews",
+#     "averaged_perceptron_tagger",
+#     "vader_lexicon",
+#     "punkt",
+# ])
 
-# import ipdb; ipdb.set_trace(context=30)
-stopwords = nltk.corpus.stopwords.words("english") + nltk.corpus.stopwords.words("spanish")
+# # import ipdb; ipdb.set_trace(context=30)
+# stopwords = nltk.corpus.stopwords.words("english") + nltk.corpus.stopwords.words("spanish")
 
 targettwitterprofile = 'alrocar'
 
@@ -166,6 +166,7 @@ def shift_hue(arr,hout):
     return rgb
 
 img = Image.open('avatar.png').convert('RGBA')
+cc = Image.open('cc.png').convert('RGBA')
 arr = np.array(img)
 
 day_of_year = datetime.now().timetuple().tm_yday
@@ -176,6 +177,7 @@ hue = (polarity + 100) * 1.8/720
 
 new_img = Image.fromarray(shift_hue(arr,hue), 'RGBA')
 avatar = f'_avatar{str(hue)}.png'
+# new_img.paste(cc, (10, 10))
 new_img.save(avatar)
 
 csv_chunk = StringIO()
