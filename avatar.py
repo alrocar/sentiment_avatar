@@ -1,7 +1,7 @@
 import tweepy
 import os
 import re
-from textblob import TextBlob
+# from textblob import TextBlob
 import time
 from datetime import datetime
 import requests
@@ -12,7 +12,7 @@ from io import StringIO
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-import nltk
+# import nltk
 from nltk.sentiment import SentimentIntensityAnalyzer
 sia = SentimentIntensityAnalyzer()
 
