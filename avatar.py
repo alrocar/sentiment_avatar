@@ -1,7 +1,7 @@
 import tweepy
 import os
 import re
-# from textblob import TextBlob
+from textblob import TextBlob
 import time
 from datetime import datetime
 import requests
@@ -13,8 +13,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 # import nltk
-from nltk.sentiment import SentimentIntensityAnalyzer
-sia = SentimentIntensityAnalyzer()
+# from nltk.sentiment import SentimentIntensityAnalyzer
+# sia = SentimentIntensityAnalyzer()
 
 # nltk.download([
 #     "names",
@@ -79,8 +79,8 @@ for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages
         tweetdate = str(tweet.created_at)
         tweettext = tweet.text
         tt = " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweettext).split())
-        polarity = sia.polarity_scores(tt)['compound']
-        # polarity = round(TextBlob(tt).sentiment.polarity,4)
+        # polarity = sia.polarity_scores(tt)['compound']
+        polarity = round(TextBlob(tt).sentiment.polarity,4)
 
         writer.writerow([tweetid, tweetdate, tweettext, polarity])
         writer_raw.writerow([json.dumps(tweet._json)])
