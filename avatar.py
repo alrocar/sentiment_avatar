@@ -166,7 +166,7 @@ def shift_hue(arr,hout):
     return rgb
 
 img = Image.open('avatar.png').convert('RGBA')
-cc = Image.open('cc.png').convert('RGBA')
+# cc = Image.open('cc.png').convert('RGBA')
 arr = np.array(img)
 
 day_of_year = datetime.now().timetuple().tm_yday
