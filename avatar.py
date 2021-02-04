@@ -171,7 +171,7 @@ def get_polarity():
     polarity_url = f'{TB_API_URL}/pipes/alrocar_timeline_polarity.json?token={READ_TOKEN}'
     response = get_requests_session().get(polarity_url)
     data = response.json()['data']
-    if len(data) == 0:
+    if len(data) == 0 or data[0]['polarity'] is None:
         return
     return float(data[0]['polarity'])
 
