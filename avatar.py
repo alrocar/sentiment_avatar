@@ -7,111 +7,32 @@ from datetime import datetime
 import requests
 import csv
 import json
+from PIL import Image
+import numpy as np
 
 from io import StringIO
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# import nltk
-# from nltk.sentiment import SentimentIntensityAnalyzer
-# sia = SentimentIntensityAnalyzer()
 
-# nltk.download([
-#     "names",
-#     "stopwords",
-#     "state_union",
-#     "twitter_samples",
-#     "movie_reviews",
-#     "averaged_perceptron_tagger",
-#     "vader_lexicon",
-#     "punkt",
-# ])
+TWITTER_HANDLE = 'alrocar'
 
-# # import ipdb; ipdb.set_trace(context=30)
-# stopwords = nltk.corpus.stopwords.words("english") + nltk.corpus.stopwords.words("spanish")
+CONSUMER_KEY = os.environ['CONSUMER_KEY']
+CONSUMER_SECRET = os.environ['CONSUMER_SECRET']
+ACCESS_TOKEN = os.environ['ACCESS_TOKEN']
+ACCESS_TOKEN_SECRET = os.environ['ACCESS_TOKEN_SECRET']
+TB_TOKEN = os.environ['TB_TOKEN']
+READ_TOKEN = os.environ['READ_TOKEN']
 
-targettwitterprofile = 'alrocar'
+TB_API_URL = 'https://api.tinybird.co/v0'
 
-consumer_key = os.environ['CONSUMER_KEY']
-consumer_secret = os.environ['CONSUMER_SECRET']
-access_token = os.environ['ACCESS_TOKEN']
-access_token_secret = os.environ['ACCESS_TOKEN_SECRET']
-tb_token = os.environ['TB_TOKEN']
-read_token = os.environ['READ_TOKEN']
+datasource = f'{TWITTER_HANDLE}_tweets'
+datasource_raw = f'{TWITTER_HANDLE}_tweets_raw'
 
-auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
-auth.set_access_token(access_token, access_token_secret)
-
+auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
+auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
 api = tweepy.API(auth)
 
-mode = 'append'
-datasource = f'{targettwitterprofile}_tweets'
-datasource_raw = f'{targettwitterprofile}_tweets_raw'
-token = tb_token
-
-url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
-url_raw = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource_raw}'
-
-retry = Retry(total=5, backoff_factor=10)
-adapter = HTTPAdapter(max_retries=retry)
-_session = requests.Session()
-_session.mount('http://', adapter)
-_session.mount('https://', adapter)
-
-csv_chunk = StringIO()
-writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-
-csv_chunk_raw = StringIO()
-writer_raw = csv.writer(csv_chunk_raw, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
-
-writer.writerow(["id", "date", "text", "polarity"])
-writer_raw.writerow(["tweet"])
-
-max_id_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_max_id.json?token={read_token}'
-# import ipdb; ipdb.set_trace(context=30)
-response = _session.get(max_id_url)
-since_id = response.json()['data'][0]['since_id']
-
-# for page in tweepy.Cursor(api.user_timeline, id=targettwitterprofile, count=200).pages(20):
-for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages(20):
-    for tweet in page:
-        tweetid = tweet.id
-        tweetdate = str(tweet.created_at)
-        tweettext = tweet.text
-        tt = " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweettext).split())
-        # polarity = sia.polarity_scores(tt)['compound']
-        polarity = round(TextBlob(tt).sentiment.polarity,4)
-
-        writer.writerow([tweetid, tweetdate, tweettext, polarity])
-        writer_raw.writerow([json.dumps(tweet._json)])
-
-    data = csv_chunk.getvalue()
-    data_raw = csv_chunk_raw.getvalue()
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'X-TB-Client': 'alrocar-tweets-0.1',
-    }
-
-    if data:
-        response = _session.post(url, headers=headers, files=dict(csv=data))
-        ok = response.status_code < 400
-        if not ok:
-            raise Exception(json.dumps(response.json()))
-
-    if data_raw:
-        response = _session.post(url_raw, headers=headers, files=dict(csv=data_raw))
-        ok = response.status_code < 400
-        if not ok:
-            raise Exception(json.dumps(response.json()))
-    time.sleep(65)
-
-# import ipdb; ipdb.set_trace(context=30)
-polarity_url = f'https://api.tinybird.co/v0/pipes/alrocar_timeline_moving_average.json?token={read_token}'
-response = _session.get(polarity_url)
-polarity = float(response.json()['data'][0]['polarity'])
-
-from PIL import Image
-import numpy as np
 
 def rgb_to_hsv(rgb):
     # Translated from source of colorsys.rgb_to_hsv
@@ -138,6 +59,7 @@ def rgb_to_hsv(rgb):
     hsv[..., 0] = (hsv[..., 0] / 6.0) % 1.0
     return hsv
 
+
 def hsv_to_rgb(hsv):
     # Translated from source of colorsys.hsv_to_rgb
     # h,s should be a numpy arrays with values between 0.0 and 1.0
@@ -159,44 +81,182 @@ def hsv_to_rgb(hsv):
     return rgb.astype('uint8')
 
 
-def shift_hue(arr,hout):
-    hsv=rgb_to_hsv(arr)
-    hsv[...,0]=hout
-    rgb=hsv_to_rgb(hsv)
+def shift_hue(arr, hout):
+    hsv = rgb_to_hsv(arr)
+    hsv[..., 0] = hout
+    rgb = hsv_to_rgb(hsv)
     return rgb
 
-img = Image.open('avatar.png').convert('RGBA')
-# cc = Image.open('cc.png').convert('RGBA')
-arr = np.array(img)
 
-day_of_year = datetime.now().timetuple().tm_yday
+def get_requests_session():
+    retry = Retry(total=5, backoff_factor=10)
+    adapter = HTTPAdapter(max_retries=retry)
+    _session = requests.Session()
+    _session.mount('http://', adapter)
+    _session.mount('https://', adapter)
+    return _session
 
-# for i in range(-100, 100, 10):
-    # hue = (180-i)
-hue = (polarity + 100) * 1.8/720
 
-new_img = Image.fromarray(shift_hue(arr,hue), 'RGBA')
-avatar = f'_avatar{str(hue)}.png'
-# new_img.paste(cc, (10, 10))
-new_img.save(avatar)
+def get_last_tweet_id():
+    max_id_url = f'{TB_API_URL}/pipes/alrocar_timeline_max_id.json?token={READ_TOKEN}'
+    response = get_requests_session().get(max_id_url)
+    data = response.json()['data']
+    if len(data) == 0:
+        return
+    return data[0]['since_id']
 
-csv_chunk = StringIO()
-writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
 
-writer.writerow(["date", "polarity", "hue"])
-writer.writerow([str(datetime.now()), polarity, hue])
-data = csv_chunk.getvalue()
-headers = {
-    'Authorization': f'Bearer {token}',
-    'X-TB-Client': 'alrocar-tweets-0.1',
-}
+def get_polarity_mvng_avg():
+    max_id_url = f'{TB_API_URL}/pipes/alrocar_timeline_moving_average.json?token={READ_TOKEN}'
+    response = get_requests_session().get(max_id_url)
+    data = response.json()['data']
+    if len(data) == 0:
+        return
+    return data
 
-if data:   
-    # updating the profile picture 
+
+def get_tweets(since_id=None, user=None):
+    # for page in tweepy.Cursor(api.user_timeline, id=TWITTER_HANDLE, count=200).pages(20):
+    raw = []
+    for page in tweepy.Cursor(api.home_timeline, since_id=since_id, count=200).pages(20):
+        for tweet in page:
+            raw.append(tweet)
+        time.sleep(65)
+    return raw
+
+
+def parse_tweets(tweets):
+    result = []
+    for tweet in tweets:
+        tweetid = tweet.id
+        tweetdate = str(tweet.created_at)
+        tweettext = tweet.text
+        tt = " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweettext).split())
+        result.append([tweetid, tweetdate, tt])
+    return result
+
+
+def enrich_polarity(tweets):
+    result = []
+    for tweet in tweets:
+        tweet.append(round(TextBlob(tweet[2]).sentiment.polarity, 4))
+        result.append(tweet)
+    return result
+
+
+def to_tinybird(rows, datasource_name, columns, token=TB_TOKEN, mode='append'):
+    url = f'{TB_API_URL}/datasources?mode={mode}&name={datasource_name}'
+
+    csv_chunk = StringIO()
+    writer = csv.writer(csv_chunk, delimiter=',', quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+
+    writer.writerow(columns)
+    for row in rows:
+        writer.writerow(row)
+
+    data = csv_chunk.getvalue()
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'X-TB-Client': 'alrocar-tweets-0.1',
+    }
+
+    if data:
+        response = get_requests_session().post(url, headers=headers, files=dict(csv=data))
+        ok = response.status_code < 400
+        if not ok:
+            raise Exception(json.dumps(response.json()))
+
+
+def get_polarity():
+    polarity_url = f'{TB_API_URL}/pipes/polarity.json?token={READ_TOKEN}'
+    response = get_requests_session().get(polarity_url)
+    data = response.json()['data']
+    if len(data) == 0:
+        return
+    return float(data[0]['polarity'])
+
+
+def polarity2hue(polarity):
+    return (polarity + 100) #* 1.8/720
+
+
+def update_avatar(hue, polarity):
+    img = Image.open('avatar.png').convert('RGBA')
+    arr = np.array(img)
+    new_img = Image.fromarray(shift_hue(arr, hue), 'RGBA')
+    avatar = f'_avatar{str(hue)}.png'
+    new_img.save(avatar)
+
     api.update_profile_image(avatar)
-    datasource = f'{targettwitterprofile}_polarity_log'
-    url = f'https://api.tinybird.co/v0/datasources?mode={mode}&name={datasource}'
-    response = _session.post(url, headers=headers, files=dict(csv=data))
-    ok = response.status_code < 400
-    if not ok:
-        raise Exception(json.dumps(response.json()))
+    to_tinybird([[str(datetime.now()), polarity, hue]], f'{TWITTER_HANDLE}_polarity_log', ["date", "polarity", "hue"])
+
+
+def update_header():
+    pass
+
+
+def create_stripes(data):
+    stripes = Image.new(mode="RGB", size=(1500, 500))
+    i = 0
+    for p in data:
+        img = Image.open('stripe.png').convert('RGBA')
+        aa = img.load()
+
+        data = np.array(img)
+
+        # r1, g1, b1 = 0, 0, 0 # Original value
+        # import ipdb; ipdb.set_trace(context=30)
+        r1 = aa[0, 0][0] # Original value
+        g1 = aa[0, 0][1] # Original value
+        b1 = aa[0, 0][2] # Original value
+        r2, g2, b2 = 255 - p['polarity'] + 100, 0 + p['polarity'] + 100, 0 # Value that we want to replace it with
+
+        red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
+        mask = (red == r1) & (green == g1) & (blue == b1)
+        data[:,:,:3][mask] = [r2, g2, b2]
+
+        new_img = Image.fromarray(data)
+        Image.Image.paste(stripes, new_img, (10 * i, 0))
+        i += 1
+    stripes.save('stripes.png')
+    # for i in range(0, 200, 10):
+    #     img = Image.open('stripe.png').convert('RGBA')
+    #     aa = img.load()
+
+    #     data = np.array(img)
+
+    #     # r1, g1, b1 = 0, 0, 0 # Original value
+    #     # import ipdb; ipdb.set_trace(context=30)
+    #     r1 = aa[0, 0][0] # Original value
+    #     g1 = aa[0, 0][1] # Original value
+    #     b1 = aa[0, 0][2] # Original value
+    #     r2, g2, b2 = 255 -i, 0 + i, 0 # Value that we want to replace it with
+
+    #     red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
+    #     mask = (red == r1) & (green == g1) & (blue == b1)
+    #     data[:,:,:3][mask] = [r2, g2, b2]
+
+    #     im = Image.fromarray(data)
+    #     # arr = np.array(img)
+    #     # hue = polarity2hue(i)
+    #     # new_img = Image.fromarray(shift_hue(arr, hue), 'RGBA')
+    #     im.save(f'avatar___{str(i)}.png')
+
+
+
+
+# import ipdb; ipdb.set_trace(context=30)
+# data = get_polarity_mvng_avg()
+# data = {}
+# create_stripes(data)
+import ipdb; ipdb.set_trace(context=30)
+since_id = get_last_tweet_id()
+tweets_raw = get_tweets(since_id)
+tweets = [[tweet.id, str(tweet.created_at), " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweet.text).split())] for tweet in tweets_raw]
+to_tinybird([[tweet + [round(TextBlob(tweet[2]).sentiment.polarity, 4)]] for tweet in tweets], datasource, ["id", "date", "text", "polarity"])
+to_tinybird([json.dumps(tweet._json) for tweet in tweets_raw], datasource_raw, ["tweet"])
+polarity = get_polarity()
+if polarity:
+    hue = polarity2hue(polarity)
+    update_avatar(hue, polarity)
+    
