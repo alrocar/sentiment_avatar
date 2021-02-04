@@ -249,7 +249,7 @@ def create_stripes(data):
 # data = get_polarity_mvng_avg()
 # data = {}
 # create_stripes(data)
-import ipdb; ipdb.set_trace(context=30)
+# import ipdb; ipdb.set_trace(context=30)
 since_id = get_last_tweet_id()
 tweets_raw = get_tweets(since_id)
 tweets = [[tweet.id, str(tweet.created_at), " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweet.text).split())] for tweet in tweets_raw]
