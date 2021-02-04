@@ -177,7 +177,7 @@ def get_polarity():
 
 
 def polarity2hue(polarity):
-    return (polarity + 100) #* 1.8/720
+    return (polarity + 100) * 1.8/720
 
 
 def update_avatar(hue, polarity):
