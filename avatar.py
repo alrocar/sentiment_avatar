@@ -168,7 +168,7 @@ def to_tinybird(rows, datasource_name, columns, token=TB_TOKEN, mode='append'):
 
 
 def get_polarity():
-    polarity_url = f'{TB_API_URL}/pipes/polarity.json?token={READ_TOKEN}'
+    polarity_url = f'{TB_API_URL}/pipes/alrocar_timeline_polarity.json?token={READ_TOKEN}'
     response = get_requests_session().get(polarity_url)
     data = response.json()['data']
     if len(data) == 0:
@@ -192,7 +192,7 @@ def update_avatar(hue, polarity):
 
 
 def update_header():
-    pass
+    api.update_profile_banner('stripes.png')
 
 
 def create_stripes(data):
@@ -243,13 +243,6 @@ def create_stripes(data):
     #     im.save(f'avatar___{str(i)}.png')
 
 
-
-
-# import ipdb; ipdb.set_trace(context=30)
-# data = get_polarity_mvng_avg()
-# data = {}
-# create_stripes(data)
-# import ipdb; ipdb.set_trace(context=30)
 since_id = get_last_tweet_id()
 tweets_raw = get_tweets(since_id)
 tweets = [[tweet.id, str(tweet.created_at), " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweet.text).split())] for tweet in tweets_raw]
@@ -259,4 +252,7 @@ polarity = get_polarity()
 if polarity:
     hue = polarity2hue(polarity)
     update_avatar(hue, polarity)
-    
+
+data = get_polarity_mvng_avg()
+create_stripes(data)
+update_header()
