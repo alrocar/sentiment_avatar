@@ -198,9 +198,14 @@ def update_header():
 def create_stripes(data):
     stripes = Image.new(mode="RGB", size=(1500, 500))
     i = 0
+    import math
     for p in data:
         img = Image.open('stripe.png').convert('RGBA')
         aa = img.load()
+        # hues = [[103,0,13], [165,15,21], [203,24,29], [239,59,44], [251,106,74], [252,146,114], [252,187,161], [254,224,210], [255,245,240], [247,251,255], [222,235,247], [198,219,239], [158,202,225], [107,174,214], [66,146,198], [33,113,181], [8,81,156], [8,48,107]]       
+        hues = [[103,0,13], [165,15,21], [203,24,29], [239,59,44], [251,106,74], [252,146,114], [252,187,161], [254,224,210], [255,245,240], [247,252,245],[229,245,224],[199,233,192],[161,217,155],[116,196,118],[65,171,93],[35,139,69],[0,109,44],[0,68,27]]
+        # hues = [[222,45,38],[252,146,114],[254,224,210], [229,245,224], [161,217,155], [49,163,84]]
+        
 
         data = np.array(img)
 
@@ -210,6 +215,10 @@ def create_stripes(data):
         g1 = aa[0, 0][1] # Original value
         b1 = aa[0, 0][2] # Original value
         r2, g2, b2 = 255 - p['polarity'] + 100, 0 + p['polarity'] + 100, 0 # Value that we want to replace it with
+        hue = hues[math.floor((p['polarity'] + 100) / (200 / len(hues))) % len(hues)]
+        r2 = hue[0]
+        g2 = hue[1]
+        b2 = hue[2]
 
         red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
         mask = (red == r1) & (green == g1) & (blue == b1)
@@ -220,6 +229,8 @@ def create_stripes(data):
         i += 1
     stripes.save('stripes.png')
     # for i in range(0, 200, 10):
+    #     import math
+    #     hues = [[103,0,13], [165,15,21], [203,24,29], [239,59,44], [251,106,74], [252,146,114], [252,187,161], [254,224,210], [255,245,240], [247,251,255], [222,235,247], [198,219,239], [158,202,225], [107,174,214], [66,146,198], [33,113,181], [8,81,156], [8,48,107]]       
     #     img = Image.open('stripe.png').convert('RGBA')
     #     aa = img.load()
 
@@ -230,7 +241,13 @@ def create_stripes(data):
     #     r1 = aa[0, 0][0] # Original value
     #     g1 = aa[0, 0][1] # Original value
     #     b1 = aa[0, 0][2] # Original value
-    #     r2, g2, b2 = 255 -i, 0 + i, 0 # Value that we want to replace it with
+    #     a = (i + 1) * 100 / 255
+
+    #     r2, g2, b2 = 255 % (i + 1), 0 + i, 0 # Value that we want to replace it with
+    #     hue = hues[math.floor(i / (200 / len(hues)))]
+    #     r2 = hue[0]
+    #     g2 = hue[1]
+    #     b2 = hue[2]
 
     #     red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
     #     mask = (red == r1) & (green == g1) & (blue == b1)
@@ -254,5 +271,6 @@ if polarity:
     update_avatar(hue, polarity)
 
 data = get_polarity_mvng_avg()
+# data = {}
 create_stripes(data)
 update_header()
