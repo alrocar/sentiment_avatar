@@ -31,7 +31,7 @@ datasource_raw = f'{TWITTER_HANDLE}_tweets_raw'
 
 auth = tweepy.OAuthHandler(CONSUMER_KEY, CONSUMER_SECRET)
 auth.set_access_token(ACCESS_TOKEN, ACCESS_TOKEN_SECRET)
-api = tweepy.API(auth)
+api = tweepy.API(auth, timeout=300)
 
 
 def rgb_to_hsv(rgb):
