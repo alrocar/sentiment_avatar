@@ -2,6 +2,7 @@ import tweepy
 import os
 import re
 from textblob import TextBlob
+from textblob.exceptions import TranslatorError
 import time
 from datetime import datetime
 import requests
@@ -25,7 +26,6 @@ TB_TOKEN = os.environ['TB_TOKEN']
 READ_TOKEN = os.environ['READ_TOKEN']
 
 TB_API_URL = 'https://api.tinybird.co/v0'
-
 datasource = f'{TWITTER_HANDLE}_tweets'
 datasource_raw = f'{TWITTER_HANDLE}_tweets_raw'
 
@@ -136,12 +136,17 @@ def parse_tweets(tweets):
     return result
 
 
-def enrich_polarity(tweets):
-    result = []
-    for tweet in tweets:
-        tweet.append(round(TextBlob(tweet[2]).sentiment.polarity, 4))
-        result.append(tweet)
-    return result
+def enrich_polarity(tweet):
+    try:
+        analysis = TextBlob(tweet)
+        language = analysis.detect_language()
+        if language != 'en':
+            analysis = analysis.translate(to='en')
+        return round(analysis.sentiment.polarity, 4)
+    except Exception:
+        pass
+    except TranslatorError:
+        pass
 
 
 def to_tinybird(rows, datasource_name, columns, token=TB_TOKEN, mode='append'):
@@ -177,7 +182,12 @@ def get_polarity():
 
 
 def polarity2hue(polarity):
-    return (polarity + 100) * 1.8/720
+    min = 0
+    max = 180 - 78
+    range = max - min
+    step = range / 18
+    step_polarity = 200 / 18
+    return (polarity + 100) / step_polarity * step / 360 #* 1.8/720
 
 
 def update_avatar(hue, polarity):
@@ -186,7 +196,6 @@ def update_avatar(hue, polarity):
     new_img = Image.fromarray(shift_hue(arr, hue), 'RGBA')
     avatar = f'_avatar{str(hue)}.png'
     new_img.save(avatar)
-
     api.update_profile_image(avatar)
     to_tinybird([[str(datetime.now()), polarity, hue]], f'{TWITTER_HANDLE}_polarity_log', ["date", "polarity", "hue"])
 
@@ -210,7 +219,6 @@ def create_stripes(data):
         data = np.array(img)
 
         # r1, g1, b1 = 0, 0, 0 # Original value
-        # import ipdb; ipdb.set_trace(context=30)
         r1 = aa[0, 0][0] # Original value
         g1 = aa[0, 0][1] # Original value
         b1 = aa[0, 0][2] # Original value
@@ -228,42 +236,12 @@ def create_stripes(data):
         Image.Image.paste(stripes, new_img, (10 * i, 0))
         i += 1
     stripes.save('stripes.png')
-    # for i in range(0, 200, 10):
-    #     import math
-    #     hues = [[103,0,13], [165,15,21], [203,24,29], [239,59,44], [251,106,74], [252,146,114], [252,187,161], [254,224,210], [255,245,240], [247,251,255], [222,235,247], [198,219,239], [158,202,225], [107,174,214], [66,146,198], [33,113,181], [8,81,156], [8,48,107]]       
-    #     img = Image.open('stripe.png').convert('RGBA')
-    #     aa = img.load()
-
-    #     data = np.array(img)
-
-    #     # r1, g1, b1 = 0, 0, 0 # Original value
-    #     # import ipdb; ipdb.set_trace(context=30)
-    #     r1 = aa[0, 0][0] # Original value
-    #     g1 = aa[0, 0][1] # Original value
-    #     b1 = aa[0, 0][2] # Original value
-    #     a = (i + 1) * 100 / 255
-
-    #     r2, g2, b2 = 255 % (i + 1), 0 + i, 0 # Value that we want to replace it with
-    #     hue = hues[math.floor(i / (200 / len(hues)))]
-    #     r2 = hue[0]
-    #     g2 = hue[1]
-    #     b2 = hue[2]
-
-    #     red, green, blue = data[:,:,0], data[:,:,1], data[:,:,2]
-    #     mask = (red == r1) & (green == g1) & (blue == b1)
-    #     data[:,:,:3][mask] = [r2, g2, b2]
-
-    #     im = Image.fromarray(data)
-    #     # arr = np.array(img)
-    #     # hue = polarity2hue(i)
-    #     # new_img = Image.fromarray(shift_hue(arr, hue), 'RGBA')
-    #     im.save(f'avatar___{str(i)}.png')
 
 
 since_id = get_last_tweet_id()
 tweets_raw = get_tweets(since_id)
 tweets = [[tweet.id, str(tweet.created_at), " ".join(re.sub("([^0-9A-Za-z \t])|(\w+:\/\/\S+)", "", tweet.text).split())] for tweet in tweets_raw]
-to_tinybird([[tweet + [round(TextBlob(tweet[2]).sentiment.polarity, 4)]] for tweet in tweets], datasource, ["id", "date", "text", "polarity"])
+to_tinybird([tweet + [enrich_polarity(tweet[2])] for tweet in tweets], datasource, ["id", "date", "text", "polarity"])
 to_tinybird([json.dumps(tweet._json) for tweet in tweets_raw], datasource_raw, ["tweet"])
 polarity = get_polarity()
 if polarity:
@@ -271,6 +249,5 @@ if polarity:
     update_avatar(hue, polarity)
 
 data = get_polarity_mvng_avg()
-# data = {}
 create_stripes(data)
 update_header()
